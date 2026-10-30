@@ -1,0 +1,44 @@
+name: Import DeepSeek-V3 source
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/import-deepseek-v3.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-deepseek-v3
+  cancel-in-progress: false
+
+jobs:
+  import-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out destination repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Clone upstream source
+        run: |
+          git clone --depth 1 --branch main https://github.com/deepseek-ai/DeepSeek-V3.git /tmp/DeepSeek-V3
+          rm -rf DeepSeek-V3
+          mkdir -p DeepSeek-V3
+          cp -a /tmp/DeepSeek-V3/. DeepSeek-V3/
+          rm -rf DeepSeek-V3/.git
+
+      - name: Commit and push imported source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add DeepSeek-V3
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+            exit 0
+          fi
+          git commit -m "Import DeepSeek-V3 source code"
+          git push origin HEAD:main
